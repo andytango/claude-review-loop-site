@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>claude-review-loop — Automated Code Review for Claude Code</title>
+  <meta name="description" content="A Claude Code plugin that spawns adversarial reviewer agents, presents findings interactively, and dispatches fixer agents to remediate approved issues.">
+  <style>
+    :root {
+      --bg: #0d1117;
+      --surface: #161b22;
+      --border: #30363d;
+      --text: #e6edf3;
+      --text-dim: #8b949e;
+      --accent: #c9a0ff;
+      --accent-dim: #a371d8;
+      --green: #56d364;
+      --orange: #e3b341;
+      --red: #f85149;
+      --blue: #58a6ff;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    /* Header */
+    header {
+      padding: 80px 0 48px;
+      text-align: center;
+    }
+
+    header h1 {
+      font-size: 2.5rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 16px;
+    }
+
+    header h1 code {
+      color: var(--accent);
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-weight: 600;
+    }
+
+    header p {
+      font-size: 1.2rem;
+      color: var(--text-dim);
+      max-width: 560px;
+      margin: 0 auto 32px;
+    }
+
+    .cta {
+      display: inline-block;
+      background: var(--accent-dim);
+      color: #fff;
+      padding: 12px 28px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 1rem;
+      transition: background 0.2s;
+    }
+
+    .cta:hover { background: var(--accent); color: var(--bg); }
+
+    .install-cmd {
+      display: inline-block;
+      margin-top: 16px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 24px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.9rem;
+      color: var(--text-dim);
+    }
+
+    .install-cmd span { color: var(--green); }
+
+    /* Flow */
+    .flow {
+      padding: 48px 0;
+    }
+
+    .flow h2 {
+      font-size: 1.6rem;
+      margin-bottom: 32px;
+      text-align: center;
+      color: var(--text);
+    }
+
+    .steps {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      position: relative;
+    }
+
+    .step {
+      display: flex;
+      gap: 24px;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    .step-marker {
+      flex-shrink: 0;
+      width: 48px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 0.85rem;
+      flex-shrink: 0;
+    }
+
+    .step-line {
+      width: 2px;
+      flex-grow: 1;
+      min-height: 24px;
+      background: var(--border);
+    }
+
+    .step:last-child .step-line { display: none; }
+
+    .step-content {
+      padding-bottom: 32px;
+    }
+
+    .step-content h3 {
+      font-size: 1.1rem;
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+    }
+
+    .step:nth-child(1) .step-number { background: var(--blue); color: var(--bg); }
+    .step:nth-child(2) .step-number { background: var(--orange); color: var(--bg); }
+    .step:nth-child(3) .step-number { background: var(--accent-dim); color: #fff; }
+    .step:nth-child(4) .step-number { background: var(--green); color: var(--bg); }
+    .step:nth-child(5) .step-number { background: var(--text-dim); color: var(--bg); }
+
+    /* Benefits */
+    .benefits {
+      padding: 48px 0;
+    }
+
+    .benefits h2 {
+      font-size: 1.6rem;
+      margin-bottom: 32px;
+      text-align: center;
+    }
+
+    .benefit-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+
+    .benefit {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+    }
+
+    .benefit h3 {
+      font-size: 1rem;
+      margin-bottom: 8px;
+      color: var(--text);
+    }
+
+    .benefit p {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+
+    .benefit-icon {
+      font-size: 1.4rem;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    /* Agents */
+    .agents {
+      padding: 48px 0;
+    }
+
+    .agents h2 {
+      font-size: 1.6rem;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+
+    .agents > p {
+      text-align: center;
+      color: var(--text-dim);
+      margin-bottom: 32px;
+    }
+
+    .agent-list {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .agent {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+
+    .agent h4 {
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      color: var(--accent);
+      margin-bottom: 6px;
+    }
+
+    .agent p {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    /* Setup */
+    .setup {
+      padding: 48px 0;
+    }
+
+    .setup h2 {
+      font-size: 1.6rem;
+      margin-bottom: 24px;
+      text-align: center;
+    }
+
+    .code-block {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 24px;
+      font-family: 'SF Mono', 'Fira Code', monospace;
+      font-size: 0.85rem;
+      overflow-x: auto;
+      margin-bottom: 16px;
+    }
+
+    .code-block .comment { color: var(--text-dim); }
+    .code-block .key { color: var(--blue); }
+    .code-block .string { color: var(--green); }
+
+    .setup p {
+      color: var(--text-dim);
+      font-size: 0.95rem;
+      margin-bottom: 12px;
+    }
+
+    /* Footer */
+    footer {
+      padding: 48px 0;
+      text-align: center;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+    }
+
+    footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    footer a:hover { text-decoration: underline; }
+
+    @media (max-width: 600px) {
+      header h1 { font-size: 1.8rem; }
+      header p { font-size: 1rem; }
+      .benefit-grid, .agent-list { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+
+    <header>
+      <h1><code>claude-review-loop</code></h1>
+      <p>A Claude Code plugin that reviews your changes with adversarial AI agents, then fixes what you approve.</p>
+      <a href="https://github.com/andytango/claude-review-loop" class="cta">View on GitHub</a>
+      <div>
+        <div class="install-cmd"><span>/plugin install</span> claude-review-loop</div>
+      </div>
+    </header>
+
+    <section class="flow">
+      <h2>How it works</h2>
+      <div class="steps">
+
+        <div class="step">
+          <div class="step-marker">
+            <div class="step-number">1</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <h3>Review</h3>
+            <p>Spawns 4 specialist agents in parallel to examine every change on your branch. Each agent brings a different lens &mdash; code quality, silent failures, test coverage, and type design.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-marker">
+            <div class="step-number">2</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <h3>Triage</h3>
+            <p>Each finding is presented interactively. You decide: <strong>approve</strong>, <strong>modify</strong>, <strong>defer</strong>, or <strong>dismiss</strong>. You're always in control of what gets fixed.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-marker">
+            <div class="step-number">3</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <h3>Plan</h3>
+            <p>Enters plan mode and presents a remediation strategy &mdash; which files to change, what to change, and why. You review and approve before any code is touched.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-marker">
+            <div class="step-number">4</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <h3>Fix</h3>
+            <p>Dispatches fixer agents to implement the approved changes. Fixes on different files run in parallel using isolated worktrees. Minimal changes only &mdash; no drive-by refactoring.</p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-marker">
+            <div class="step-number">5</div>
+            <div class="step-line"></div>
+          </div>
+          <div class="step-content">
+            <h3>Re-audit</h3>
+            <p>Optionally re-runs the entire review loop to verify fixes and catch regressions. Repeat until clean.</p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <section class="benefits">
+      <h2>Why use it</h2>
+      <div class="benefit-grid">
+        <div class="benefit">
+          <span class="benefit-icon" aria-hidden="true">&#x1f441;</span>
+          <h3>Fresh eyes on every change</h3>
+          <p>Adversarial reviewers examine your code with zero assumptions. They catch what you've gone blind to after hours of coding.</p>
+        </div>
+        <div class="benefit">
+          <span class="benefit-icon" aria-hidden="true">&#x26a1;</span>
+          <h3>Parallel specialist agents</h3>
+          <p>Four focused agents run simultaneously &mdash; each specializing in a different class of defect. Faster and more thorough than a single pass.</p>
+        </div>
+        <div class="benefit">
+          <span class="benefit-icon" aria-hidden="true">&#x1f6e1;</span>
+          <h3>Human in the loop</h3>
+          <p>Every finding goes through you. Nothing gets fixed without your explicit approval. Modify suggestions, defer issues, or dismiss false positives.</p>
+        </div>
+        <div class="benefit">
+          <span class="benefit-icon" aria-hidden="true">&#x1f501;</span>
+          <h3>Review, fix, repeat</h3>
+          <p>After fixes are applied, re-run the loop to verify. Iterative refinement until the code is clean. State is preserved across sessions.</p>
+        </div>
+        <div class="benefit">
+          <span class="benefit-icon" aria-hidden="true">&#x1f4cb;</span>
+          <h3>Plan before you fix</h3>
+          <p>Claude enters plan mode and presents its remediation strategy for your approval. You see exactly what will change before a single line is edited.</p>
+        </div>
+        <div class="benefit">
+          <span class="benefit-icon" aria-hidden="true">&#x1f4e6;</span>
+          <h3>Zero dependencies</h3>
+          <p>Pure markdown skill &mdash; no Node.js, no build step, no npm install. Works immediately with just Claude Code.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="agents">
+      <h2>Specialist agents</h2>
+      <p>The reviewer delegates to four agents from Claude's PR Review Toolkit, running in parallel:</p>
+      <div class="agent-list">
+        <div class="agent">
+          <h4>code-reviewer</h4>
+          <p>Bugs, logic errors, null handling, race conditions, security issues, and adherence to project guidelines.</p>
+        </div>
+        <div class="agent">
+          <h4>silent-failure-hunter</h4>
+          <p>Empty catch blocks, swallowed errors, missing error propagation, and inadequate error handling.</p>
+        </div>
+        <div class="agent">
+          <h4>pr-test-analyzer</h4>
+          <p>Critical untested paths, missing edge case coverage, and gaps in error handling tests.</p>
+        </div>
+        <div class="agent">
+          <h4>type-design-analyzer</h4>
+          <p>Invariant strength, encapsulation quality, discriminated union design, and type safety issues.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="setup">
+      <h2>Get started</h2>
+
+      <p>Install the plugin:</p>
+      <div class="code-block"><span class="comment"># From the Claude Code CLI</span>
+/plugin install claude-review-loop</div>
+
+      <p>Enable parallel agent teams in <code>~/.claude/settings.json</code>:</p>
+      <div class="code-block">{
+  <span class="key">"env"</span>: {
+    <span class="key">"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"</span>: <span class="string">"1"</span>
+  }
+}</div>
+
+      <p>Add required permissions to <code>~/.claude/settings.json</code>:</p>
+      <div class="code-block">{
+  <span class="key">"permissions"</span>: {
+    <span class="key">"allow"</span>: [
+      <span class="string">"Bash(git *)"</span>,
+      <span class="string">"Bash(date *)"</span>,
+      <span class="string">"Read(*)"</span>,
+      <span class="string">"Write(*)"</span>,
+      <span class="string">"Edit(*)"</span>,
+      <span class="string">"Glob(*)"</span>
+    ]
+  }
+}</div>
+
+      <p>Then, from any branch with changes:</p>
+      <div class="code-block"><span class="comment"># Invoke the skill</span>
+/review-loop</div>
+    </section>
+
+    <footer>
+      <p>Built by <a href="https://github.com/andytango">andytango</a> &middot; <a href="https://github.com/andytango/claude-review-loop">Source on GitHub</a> &middot; MIT License</p>
+    </footer>
+
+  </div>
+
+</body>
+</html>
