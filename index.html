@@ -265,7 +265,7 @@
           </div>
           <div class="step-content">
             <h3>Audit</h3>
-            <p>A fresh session spawns 4 specialist agents in parallel &mdash; code quality, silent failures, test coverage, and type design &mdash; each examining your branch diff with zero prior context.</p>
+            <p>A fresh session creates an agent team with 4 specialist teammates in parallel &mdash; code quality, silent failures, test coverage, and type design &mdash; each examining your branch diff with zero prior context.</p>
           </div>
         </div>
 
@@ -287,7 +287,7 @@
           </div>
           <div class="step-content">
             <h3>Swarm</h3>
-            <p>Fixer agents remediate approved findings in parallel across isolated worktrees. You review the plan before any code is touched.</p>
+            <p>A fixer team remediates approved findings in parallel. You review the plan before any code is touched.</p>
           </div>
         </div>
 
@@ -314,7 +314,7 @@
         </div>
         <div class="benefit">
           <h3>Parallel specialists</h3>
-          <p>Four focused agents run simultaneously, each hunting a different class of defect. Faster and more thorough than a single pass.</p>
+          <p>Four focused teammates run simultaneously as an agent team, each hunting a different class of defect. Faster and more thorough than a single pass.</p>
         </div>
         <div class="benefit">
           <h3>Human in the loop</h3>
@@ -337,7 +337,7 @@
 <span class="comment"># Run from any branch with changes</span>
 /review-loop</div>
 
-      <p>Required in <code>~/.claude/settings.json</code>:</p>
+      <p>Required in <code>~/.claude/settings.json</code> (agent teams must be enabled):</p>
       <div class="code-block">{
   <span class="key">"env"</span>: { <span class="key">"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"</span>: <span class="string">"1"</span> },
   <span class="key">"permissions"</span>: { <span class="key">"allow"</span>: [<span class="string">"Bash(git *)"</span>, <span class="string">"Bash(date *)"</span>, <span class="string">"Read(*)"</span>, <span class="string">"Write(*)"</span>, <span class="string">"Edit(*)"</span>, <span class="string">"Glob(*)"</span>] }
