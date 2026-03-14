@@ -265,7 +265,7 @@
           </div>
           <div class="step-content">
             <h3>Audit</h3>
-            <p>A fresh session spawns 4 specialist subagents in parallel &mdash; code quality, silent failures, test coverage, and type design &mdash; each examining your branch diff with zero prior context.</p>
+            <p>Spawns 4 specialist agents from the <a href="https://github.com/anthropics/claude-code-plugins">PR Review Toolkit</a> in parallel &mdash; code-reviewer, silent-failure-hunter, pr-test-analyzer, and type-design-analyzer &mdash; each examining your branch diff with confidence scoring and zero prior context.</p>
           </div>
         </div>
 
@@ -313,16 +313,16 @@
           <p>A fresh session reviews your code with zero prior context. No assumptions, no defending past choices &mdash; just adversarial scrutiny.</p>
         </div>
         <div class="benefit">
-          <h3>Parallel specialists</h3>
-          <p>Four focused subagents run simultaneously, each hunting a different class of defect. Faster and more thorough than a single pass.</p>
+          <h3>PR Review Toolkit agents</h3>
+          <p>Leverages the official PR Review Toolkit's specialist agents with confidence scoring, structured output, and project-aware context. Each runs in parallel hunting a different class of defect.</p>
         </div>
         <div class="benefit">
           <h3>Human in the loop</h3>
           <p>Nothing gets fixed without your approval. You skim false positives rather than miss hallucinations or logic gaps.</p>
         </div>
         <div class="benefit">
-          <h3>Zero dependencies</h3>
-          <p>Pure markdown skill &mdash; no build step, no runtime. Works immediately with just Claude Code.</p>
+          <h3>Minimal setup</h3>
+          <p>Pure markdown skill &mdash; no build step, no runtime. Just install the plugin and the PR Review Toolkit, then run <code>/review-loop</code>.</p>
         </div>
       </div>
     </section>
@@ -331,7 +331,8 @@
       <h2>Get started</h2>
 
       <p>Install and run:</p>
-      <div class="code-block"><span class="comment"># Install the plugin</span>
+      <div class="code-block"><span class="comment"># Install the plugins</span>
+/plugin install pr-review-toolkit
 /plugin install claude-review-loop
 
 <span class="comment"># Run from any branch with changes</span>
